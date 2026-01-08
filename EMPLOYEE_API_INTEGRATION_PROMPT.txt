@@ -1,0 +1,487 @@
+# Task: Integrate Employee API into Next.js Application
+
+## Context
+I have an existing Next.js application where Authentication (Login/Signup/Token Management) is already fully integrated and working. I typically use an Axios instance (or similar) that automatically attaches the `Bearer` token to requests.
+
+I need you to integrate the new **Employee CRUD API** into this application.
+
+## API Specification
+
+**Base URL**: `/api/v1/employees`
+
+**Authentication**: All endpoints require JWT Bearer token in the Authorization header.
+
+### 1. Data Model (Employee)
+
+#### Employee Object Structure
+```typescript
+interface Employee {
+  id: number;              // Auto-generated
+  name: string;            // Required
+  address: string;         // Required
+  gender: string;          // Required (e.g., "Male", "Female", "Other")
+  fatherName?: string;     // Optional
+  isMarried?: boolean;     // Optional
+  createdAt: string;       // ISO Date (Auto-generated)
+  updatedAt: string;       // ISO Date (Auto-generated)
+  createdBy?: number;      // User ID who created (Auto-generated)
+  updatedBy?: number;      // User ID who last updated (Auto-generated)
+}
+```
+
+#### API Response Wrapper
+All endpoints return data wrapped in this structure:
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+  timestamp: string;
+}
+```
+
+### 2. Endpoints
+
+#### A. Create Employee
+- **Method**: `POST`
+- **URL**: `/api/v1/employees`
+- **Headers**: 
+  ```
+  Content-Type: application/json
+  Authorization: Bearer {access_token}
+  ```
+- **Request Body**:
+  ```json
+  {
+    "name": "John Doe",
+    "address": "123 Main St, New York, NY 10001",
+    "gender": "Male",
+    "fatherName": "Richard Doe",
+    "isMarried": false
+  }
+  ```
+- **Success Response (201 Created)**:
+  ```json
+  {
+    "success": true,
+    "message": "Employee created successfully",
+    "data": {
+      "id": 1,
+      "name": "John Doe",
+      "address": "123 Main St, New York, NY 10001",
+      "gender": "Male",
+      "fatherName": "Richard Doe",
+      "isMarried": false,
+      "createdAt": "2026-01-05T10:00:00",
+      "updatedAt": "2026-01-05T10:00:00",
+      "createdBy": 1,
+      "updatedBy": 1
+    },
+    "timestamp": "2026-01-05T10:00:00"
+  }
+  ```
+
+#### B. Get All Employees
+- **Method**: `GET`
+- **URL**: `/api/v1/employees`
+- **Headers**: 
+  ```
+  Authorization: Bearer {access_token}
+  ```
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Employees fetched successfully",
+    "data": [
+      {
+        "id": 1,
+        "name": "John Doe",
+        "address": "123 Main St, New York, NY 10001",
+        "gender": "Male",
+        "fatherName": "Richard Doe",
+        "isMarried": false,
+        "createdAt": "2026-01-05T10:00:00",
+        "updatedAt": "2026-01-05T10:00:00",
+        "createdBy": 1,
+        "updatedBy": 1
+      },
+      {
+        "id": 2,
+        "name": "Jane Smith",
+        "address": "456 Oak Ave, Los Angeles, CA 90001",
+        "gender": "Female",
+        "fatherName": "Robert Smith",
+        "isMarried": true,
+        "createdAt": "2026-01-05T11:00:00",
+        "updatedAt": "2026-01-05T11:00:00",
+        "createdBy": 1,
+        "updatedBy": 1
+      }
+    ],
+    "timestamp": "2026-01-05T12:00:00"
+  }
+  ```
+
+#### C. Get Employee by ID
+- **Method**: `GET`
+- **URL**: `/api/v1/employees/{id}`
+- **Headers**: 
+  ```
+  Authorization: Bearer {access_token}
+  ```
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Employee fetched successfully",
+    "data": {
+      "id": 1,
+      "name": "John Doe",
+      "address": "123 Main St, New York, NY 10001",
+      "gender": "Male",
+      "fatherName": "Richard Doe",
+      "isMarried": false,
+      "createdAt": "2026-01-05T10:00:00",
+      "updatedAt": "2026-01-05T10:00:00",
+      "createdBy": 1,
+      "updatedBy": 1
+    },
+    "timestamp": "2026-01-05T12:00:00"
+  }
+  ```
+- **Error Response (404 Not Found)**:
+  ```json
+  {
+    "success": false,
+    "message": "Employee not found with id: 999",
+    "timestamp": "2026-01-05T12:00:00"
+  }
+  ```
+
+#### D. Update Employee
+- **Method**: `PUT`
+- **URL**: `/api/v1/employees/{id}`
+- **Headers**: 
+  ```
+  Content-Type: application/json
+  Authorization: Bearer {access_token}
+  ```
+- **Request Body**: (All fields required, same as Create)
+  ```json
+  {
+    "name": "John Doe Updated",
+    "address": "456 New Ave, Chicago, IL 60601",
+    "gender": "Male",
+    "fatherName": "Richard Doe",
+    "isMarried": true
+  }
+  ```
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Employee updated successfully",
+    "data": {
+      "id": 1,
+      "name": "John Doe Updated",
+      "address": "456 New Ave, Chicago, IL 60601",
+      "gender": "Male",
+      "fatherName": "Richard Doe",
+      "isMarried": true,
+      "createdAt": "2026-01-05T10:00:00",
+      "updatedAt": "2026-01-05T13:00:00",
+      "createdBy": 1,
+      "updatedBy": 1
+    },
+    "timestamp": "2026-01-05T13:00:00"
+  }
+  ```
+
+#### E. Delete Employee
+- **Method**: `DELETE`
+- **URL**: `/api/v1/employees/{id}`
+- **Headers**: 
+  ```
+  Authorization: Bearer {access_token}
+  ```
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Employee deleted successfully",
+    "timestamp": "2026-01-05T13:00:00"
+  }
+  ```
+- **Error Response (404 Not Found)**:
+  ```json
+  {
+    "success": false,
+    "message": "Employee not found with id: 999",
+    "timestamp": "2026-01-05T13:00:00"
+  }
+  ```
+
+---
+
+## Requirements for Integration
+
+### 1. API Service Layer
+Create a file `services/employeeService.ts` (or similar based on your project structure) to handle these API calls.
+
+**Example Implementation:**
+```typescript
+import api from '@/lib/api'; // Your existing authenticated Axios instance
+
+export const employeeService = {
+  // Create employee
+  createEmployee: async (data: CreateEmployeeDto) => {
+    const response = await api.post('/api/v1/employees', data);
+    return response.data;
+  },
+
+  // Get all employees
+  getAllEmployees: async () => {
+    const response = await api.get('/api/v1/employees');
+    return response.data;
+  },
+
+  // Get employee by ID
+  getEmployeeById: async (id: number) => {
+    const response = await api.get(`/api/v1/employees/${id}`);
+    return response.data;
+  },
+
+  // Update employee
+  updateEmployee: async (id: number, data: UpdateEmployeeDto) => {
+    const response = await api.put(`/api/v1/employees/${id}`, data);
+    return response.data;
+  },
+
+  // Delete employee
+  deleteEmployee: async (id: number) => {
+    const response = await api.delete(`/api/v1/employees/${id}`);
+    return response.data;
+  },
+};
+```
+
+### 2. TypeScript Types
+Create type definitions for type safety:
+
+```typescript
+export interface Employee {
+  id: number;
+  name: string;
+  address: string;
+  gender: string;
+  fatherName?: string;
+  isMarried?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: number;
+  updatedBy?: number;
+}
+
+export interface CreateEmployeeDto {
+  name: string;
+  address: string;
+  gender: string;
+  fatherName?: string;
+  isMarried?: boolean;
+}
+
+export type UpdateEmployeeDto = CreateEmployeeDto;
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+  timestamp: string;
+}
+```
+
+### 3. State Management / Hooks
+
+**Option A: Using TanStack Query (React Query) - RECOMMENDED**
+
+Create custom hooks in `hooks/useEmployees.ts`:
+
+```typescript
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { employeeService } from '@/services/employeeService';
+import { toast } from 'sonner'; // or your toast library
+
+// Get all employees
+export const useEmployees = () => {
+  return useQuery({
+    queryKey: ['employees'],
+    queryFn: employeeService.getAllEmployees,
+  });
+};
+
+// Get employee by ID
+export const useEmployee = (id: number) => {
+  return useQuery({
+    queryKey: ['employee', id],
+    queryFn: () => employeeService.getEmployeeById(id),
+    enabled: !!id,
+  });
+};
+
+// Create employee
+export const useCreateEmployee = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: employeeService.createEmployee,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('Employee created successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to create employee');
+    },
+  });
+};
+
+// Update employee
+export const useUpdateEmployee = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateEmployeeDto }) =>
+      employeeService.updateEmployee(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('Employee updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update employee');
+    },
+  });
+};
+
+// Delete employee
+export const useDeleteEmployee = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: employeeService.deleteEmployee,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('Employee deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete employee');
+    },
+  });
+};
+```
+
+**Option B: Using useState/useEffect (if not using React Query)**
+
+Show how to manage state manually with proper loading and error states.
+
+### 4. UI Components
+
+#### A. Employee List Component
+Create a table or grid component displaying employees with Edit/Delete actions.
+
+**Requirements:**
+- Display all employee fields in a table format
+- Include Edit and Delete action buttons for each row
+- Show loading state while fetching data
+- Show empty state when no employees exist
+- Handle errors gracefully
+- Responsive design for mobile devices
+
+#### B. Employee Form Component
+Create a form component for creating and updating employees.
+
+**Form Fields:**
+1. **Name** (Text Input) - Required
+2. **Address** (Textarea) - Required
+3. **Gender** (Select/Radio) - Required
+   - Options: Male, Female, Other
+4. **Father Name** (Text Input) - Optional
+5. **Is Married** (Checkbox/Toggle) - Optional
+
+**Form Validation (using React Hook Form + Zod):**
+```typescript
+import { z } from 'zod';
+
+export const employeeSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
+  address: z.string().min(1, 'Address is required').max(500, 'Address is too long'),
+  gender: z.string().min(1, 'Gender is required'),
+  fatherName: z.string().max(255, 'Father name is too long').optional(),
+  isMarried: z.boolean().optional(),
+});
+```
+
+**Form Features:**
+- Pre-fill form when editing an existing employee
+- Clear validation error messages
+- Disable submit button while submitting
+- Show success/error toast notifications
+- Reset form after successful submission
+
+### 5. Pages/Routes
+
+#### Main Employee List Page
+- **Route**: `/dashboard/test-employees`
+- **Features**:
+  - Display employee list table
+  - "Add New Employee" button
+  - Search/filter functionality (optional)
+  - Pagination (if needed)
+
+#### Create/Edit Employee
+- **Implementation**: Modal or separate page
+- **Features**:
+  - Form for creating new employee
+  - Same form for editing (pre-filled with existing data)
+  - Cancel and Save buttons
+  - Form validation
+
+### 6. Error Handling
+
+Handle common API errors:
+- **401 Unauthorized**: Redirect to login
+- **403 Forbidden**: Show access denied message
+- **404 Not Found**: Show "Employee not found" message
+- **500 Server Error**: Show generic error message
+
+### 7. Additional Considerations
+
+- **Loading States**: Show skeletons or spinners while data is loading
+- **Optimistic Updates**: Update UI immediately before API response (optional)
+- **Confirmation Dialogs**: Show confirmation before deleting an employee
+- **Accessibility**: Ensure forms and tables are keyboard accessible
+- **Mobile Responsiveness**: Ensure UI works well on all screen sizes
+
+---
+
+## Implementation Checklist
+
+- [ ] Create TypeScript types/interfaces
+- [ ] Create employee service with all API methods
+- [ ] Create custom hooks (if using React Query)
+- [ ] Create Employee List component
+- [ ] Create Employee Form component
+- [ ] Create main page at `/dashboard/test-employees`
+- [ ] Implement Create functionality
+- [ ] Implement Read/List functionality
+- [ ] Implement Update functionality
+- [ ] Implement Delete functionality
+- [ ] Add form validation
+- [ ] Add error handling
+- [ ] Add loading states
+- [ ] Add success/error notifications
+- [ ] Test all CRUD operations
+- [ ] Ensure mobile responsiveness
+
+---
+
+Please generate the complete code following the existing project structure, styling conventions, and component patterns used in the authentication implementation.

@@ -23,8 +23,9 @@ import java.util.UUID;
  * Local file storage service implementation.
  * Stores files on the local filesystem.
  */
-@Service
 @Slf4j
+@Service
+@Primary
 public class LocalFileStorageService implements FileStorageService {
 
     private final Path fileStorageLocation;

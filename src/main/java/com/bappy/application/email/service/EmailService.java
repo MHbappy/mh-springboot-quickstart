@@ -138,7 +138,7 @@ public class EmailService {
     @Async
     public void sendPasswordResetEmail(User user, String token) {
         try {
-            String resetUrl = frontendUrl + "/reset-password?token=" + token;
+            String resetUrl = frontendUrl + "/auth/reset-password?token=" + token;
             
             Map<String, Object> model = new HashMap<>();
             model.put("name", user.getFirstName() != null ? user.getFirstName() : user.getEmail());

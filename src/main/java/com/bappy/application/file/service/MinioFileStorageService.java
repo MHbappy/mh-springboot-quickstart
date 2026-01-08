@@ -28,10 +28,10 @@ import java.util.concurrent.TimeUnit;
  * MinIO file storage service implementation.
  * Stores files in MinIO object storage (S3-compatible).
  */
-@Service
+//@Service
 @RequiredArgsConstructor
 @Slf4j
-@Primary
+//@Primary
 public class MinioFileStorageService implements FileStorageService {
 
     private final MinioClient minioClient;

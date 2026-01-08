@@ -1,0 +1,483 @@
+# EMPLOYEE API DOCUMENTATION
+
+## Overview
+This document provides complete documentation for the Employee CRUD API endpoints.
+
+---
+
+## Base URL
+```
+/api/v1/employees
+```
+
+---
+
+## Authentication
+All Employee API endpoints require authentication. Include the JWT access token in the Authorization header:
+```
+Authorization: Bearer <your_access_token>
+```
+
+---
+
+## Employee Data Model
+
+### Employee Object
+```json
+{
+  "id": 1,
+  "name": "John Doe",
+  "address": "123 Main Street, New York, NY 10001",
+  "gender": "Male",
+  "fatherName": "Richard Doe",
+  "isMarried": true,
+  "createdAt": "2026-01-05T10:00:00",
+  "updatedAt": "2026-01-05T10:00:00",
+  "createdBy": 1,
+  "updatedBy": 1
+}
+```
+
+### Field Descriptions
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | Long | Auto-generated | Unique identifier for the employee |
+| name | String | Yes | Full name of the employee |
+| address | String | Yes | Complete address of the employee |
+| gender | String | Yes | Gender of the employee (e.g., Male, Female, Other) |
+| fatherName | String | No | Father's name |
+| isMarried | Boolean | No | Marital status (true = married, false = unmarried) |
+| createdAt | Timestamp | Auto-generated | Record creation timestamp |
+| updatedAt | Timestamp | Auto-generated | Last update timestamp |
+| createdBy | Long | Auto-generated | ID of user who created the record |
+| updatedBy | Long | Auto-generated | ID of user who last updated the record |
+
+---
+
+## API Endpoints
+
+### 1. Create Employee
+Create a new employee record.
+
+**Endpoint:** `POST /api/v1/employees`
+
+**Request Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer <access_token>
+```
+
+**Request Body:**
+```json
+{
+  "name": "John Doe",
+  "address": "123 Main Street, New York, NY 10001",
+  "gender": "Male",
+  "fatherName": "Richard Doe",
+  "isMarried": true
+}
+```
+
+**Success Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Employee created successfully",
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "address": "123 Main Street, New York, NY 10001",
+    "gender": "Male",
+    "fatherName": "Richard Doe",
+    "isMarried": true,
+    "createdAt": "2026-01-05T10:00:00",
+    "updatedAt": "2026-01-05T10:00:00",
+    "createdBy": 1,
+    "updatedBy": 1
+  },
+  "timestamp": "2026-01-05T10:00:00"
+}
+```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "success": false,
+  "message": "Validation failed: name is required",
+  "timestamp": "2026-01-05T10:00:00"
+}
+```
+
+---
+
+### 2. Get All Employees
+Retrieve a list of all employees.
+
+**Endpoint:** `GET /api/v1/employees`
+
+**Request Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Employees fetched successfully",
+  "data": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "address": "123 Main Street, New York, NY 10001",
+      "gender": "Male",
+      "fatherName": "Richard Doe",
+      "isMarried": true,
+      "createdAt": "2026-01-05T10:00:00",
+      "updatedAt": "2026-01-05T10:00:00",
+      "createdBy": 1,
+      "updatedBy": 1
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "address": "456 Oak Avenue, Los Angeles, CA 90001",
+      "gender": "Female",
+      "fatherName": "Robert Smith",
+      "isMarried": false,
+      "createdAt": "2026-01-05T11:00:00",
+      "updatedAt": "2026-01-05T11:00:00",
+      "createdBy": 1,
+      "updatedBy": 1
+    }
+  ],
+  "timestamp": "2026-01-05T10:00:00"
+}
+```
+
+---
+
+### 3. Get Employee by ID
+Retrieve a specific employee by their ID.
+
+**Endpoint:** `GET /api/v1/employees/{id}`
+
+**Path Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| id | Long | Employee ID |
+
+**Request Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Example Request:**
+```
+GET /api/v1/employees/1
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Employee fetched successfully",
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "address": "123 Main Street, New York, NY 10001",
+    "gender": "Male",
+    "fatherName": "Richard Doe",
+    "isMarried": true,
+    "createdAt": "2026-01-05T10:00:00",
+    "updatedAt": "2026-01-05T10:00:00",
+    "createdBy": 1,
+    "updatedBy": 1
+  },
+  "timestamp": "2026-01-05T10:00:00"
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "success": false,
+  "message": "Employee not found with id: 999",
+  "timestamp": "2026-01-05T10:00:00"
+}
+```
+
+---
+
+### 4. Update Employee
+Update an existing employee's information.
+
+**Endpoint:** `PUT /api/v1/employees/{id}`
+
+**Path Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| id | Long | Employee ID to update |
+
+**Request Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer <access_token>
+```
+
+**Request Body:**
+```json
+{
+  "name": "John Doe Updated",
+  "address": "789 New Boulevard, Chicago, IL 60601",
+  "gender": "Male",
+  "fatherName": "Richard Doe",
+  "isMarried": true
+}
+```
+
+**Example Request:**
+```
+PUT /api/v1/employees/1
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Employee updated successfully",
+  "data": {
+    "id": 1,
+    "name": "John Doe Updated",
+    "address": "789 New Boulevard, Chicago, IL 60601",
+    "gender": "Male",
+    "fatherName": "Richard Doe",
+    "isMarried": true,
+    "createdAt": "2026-01-05T10:00:00",
+    "updatedAt": "2026-01-05T12:00:00",
+    "createdBy": 1,
+    "updatedBy": 1
+  },
+  "timestamp": "2026-01-05T12:00:00"
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "success": false,
+  "message": "Employee not found with id: 999",
+  "timestamp": "2026-01-05T12:00:00"
+}
+```
+
+---
+
+### 5. Delete Employee
+Delete an employee record.
+
+**Endpoint:** `DELETE /api/v1/employees/{id}`
+
+**Path Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| id | Long | Employee ID to delete |
+
+**Request Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Example Request:**
+```
+DELETE /api/v1/employees/1
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Employee deleted successfully",
+  "timestamp": "2026-01-05T12:00:00"
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "success": false,
+  "message": "Employee not found with id: 999",
+  "timestamp": "2026-01-05T12:00:00"
+}
+```
+
+---
+
+## Common Error Responses
+
+### 401 Unauthorized
+Returned when the access token is missing or invalid.
+```json
+{
+  "success": false,
+  "message": "Unauthorized: Invalid or expired token",
+  "timestamp": "2026-01-05T10:00:00"
+}
+```
+
+### 403 Forbidden
+Returned when the user doesn't have permission to access the resource.
+```json
+{
+  "success": false,
+  "message": "Access denied",
+  "timestamp": "2026-01-05T10:00:00"
+}
+```
+
+### 500 Internal Server Error
+Returned when an unexpected server error occurs.
+```json
+{
+  "success": false,
+  "message": "Internal server error occurred",
+  "timestamp": "2026-01-05T10:00:00"
+}
+```
+
+---
+
+## Example Usage with cURL
+
+### Create Employee
+```bash
+curl -X POST http://localhost:8080/api/v1/employees \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "John Doe",
+    "address": "123 Main Street, New York, NY 10001",
+    "gender": "Male",
+    "fatherName": "Richard Doe",
+    "isMarried": true
+  }'
+```
+
+### Get All Employees
+```bash
+curl -X GET http://localhost:8080/api/v1/employees \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Get Employee by ID
+```bash
+curl -X GET http://localhost:8080/api/v1/employees/1 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Update Employee
+```bash
+curl -X PUT http://localhost:8080/api/v1/employees/1 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "John Doe Updated",
+    "address": "789 New Boulevard, Chicago, IL 60601",
+    "gender": "Male",
+    "fatherName": "Richard Doe",
+    "isMarried": true
+  }'
+```
+
+### Delete Employee
+```bash
+curl -X DELETE http://localhost:8080/api/v1/employees/1 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Example Usage with JavaScript (Axios)
+
+```javascript
+// Assuming you have an axios instance with the token already configured
+import api from './api'; // Your configured axios instance
+
+// Create Employee
+const createEmployee = async (employeeData) => {
+  const response = await api.post('/api/v1/employees', employeeData);
+  return response.data;
+};
+
+// Get All Employees
+const getAllEmployees = async () => {
+  const response = await api.get('/api/v1/employees');
+  return response.data;
+};
+
+// Get Employee by ID
+const getEmployeeById = async (id) => {
+  const response = await api.get(`/api/v1/employees/${id}`);
+  return response.data;
+};
+
+// Update Employee
+const updateEmployee = async (id, employeeData) => {
+  const response = await api.put(`/api/v1/employees/${id}`, employeeData);
+  return response.data;
+};
+
+// Delete Employee
+const deleteEmployee = async (id) => {
+  const response = await api.delete(`/api/v1/employees/${id}`);
+  return response.data;
+};
+```
+
+---
+
+## Database Schema
+
+```sql
+CREATE TABLE employees (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address VARCHAR(500) NOT NULL,
+    gender VARCHAR(50) NOT NULL,
+    father_name VARCHAR(255),
+    is_married BOOLEAN,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT
+);
+
+CREATE INDEX idx_employees_name ON employees(name);
+CREATE INDEX idx_employees_gender ON employees(gender);
+```
+
+---
+
+## Notes
+
+1. **Authentication Required**: All endpoints require a valid JWT access token.
+2. **Automatic Timestamps**: `createdAt` and `updatedAt` are automatically managed by the system.
+3. **Audit Fields**: `createdBy` and `updatedBy` are automatically populated based on the authenticated user.
+4. **Validation**: Required fields (name, address, gender) must be provided when creating or updating an employee.
+5. **Swagger Documentation**: Interactive API documentation is available at `/swagger-ui.html` when the application is running.
+
+---
+
+## Testing the API
+
+You can test the API using:
+1. **Swagger UI**: Navigate to `http://localhost:8080/swagger-ui.html`
+2. **Postman**: Import the endpoints and test with your access token
+3. **cURL**: Use the command-line examples provided above
+4. **Your Next.js Application**: Integrate using the provided JavaScript examples
+
+---
+
+## Support
+
+For issues or questions, please refer to the main application documentation or contact the development team.
