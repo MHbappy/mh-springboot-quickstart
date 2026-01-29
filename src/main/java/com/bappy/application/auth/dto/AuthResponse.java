@@ -31,5 +31,7 @@ public class AuthResponse {
         private String lastName;
         private Boolean emailVerified;
         private String status;
+        private java.util.List<String> roles;
+        private String provider;
     }
 }

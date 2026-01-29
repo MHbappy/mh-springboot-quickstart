@@ -73,7 +73,7 @@ app:
   oauth2:
     authorized-redirect-uris:
 #      - ${app.frontend-url}/oauth2/redirect
-      - http://localhost:8080/oauth2/redirect
+      - http://localhost:3000/oauth2/redirect
       - http://localhost:8080/oauth2/callback/google
 
 # Management & Monitoring

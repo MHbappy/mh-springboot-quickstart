@@ -128,4 +128,17 @@ public class AuthController {
         authService.resetPassword(token, newPassword);
         return ResponseEntity.ok(ApiResponse.success("Password reset successfully"));
     }
+
+    /**
+     * Change password for logged-in user
+     */
+    @PostMapping("/change-password")
+    @Operation(summary = "Change password", description = "Change password for logged-in user")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody com.bappy.application.auth.dto.ChangePasswordRequest request,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.bappy.application.security.UserPrincipal currentUser) {
+        log.info("Change password request received for user: {}", currentUser.getEmail());
+        authService.changePassword(currentUser.getId(), request.getOldPassword(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
+    }
 }

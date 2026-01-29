@@ -284,12 +284,40 @@ public class AuthService {
 
             log.info("OAuth2 token exchanged successfully for user: {}", user.getEmail());
 
+            log.info("OAuth2 token exchanged successfully for user: {}", user.getEmail());
+
             return buildAuthResponse(user, accessToken, refreshToken.getToken());
             
         } catch (Exception e) {
             log.error("OAuth2 token exchange failed", e);
             throw new BadRequestException("Failed to exchange OAuth2 token: " + e.getMessage());
         }
+    }
+
+    /**
+     * Change password for authenticated user
+     */
+    @Transactional
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        // specific check for users who signed up with social login and don't have a password
+        if (user.getPassword() == null) {
+            throw new BadRequestException("You signed up with a social account. Please use 'Forgot Password' to set a password first.");
+        }
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new BadRequestException("Incorrect old password");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Optional: Revoke all sessions/tokens if you want to force re-login
+        // tokenService.revokeAllUserTokens(user);
+
+        log.info("Password changed successfully for user: {}", user.getEmail());
     }
 
     // ==================== Helper Methods ====================
@@ -331,6 +359,11 @@ public class AuthService {
      * Build authentication response
      */
     private AuthResponse buildAuthResponse(User user, String accessToken, String refreshToken) {
+        // Extract role names from user roles
+        java.util.List<String> roleNames = user.getRoles().stream()
+                .map(com.bappy.application.user.entity.Role::getName)
+                .collect(java.util.stream.Collectors.toList());
+
         AuthResponse.UserInfo userInfo = AuthResponse.UserInfo.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -338,6 +371,8 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .emailVerified(user.getEmailVerified())
                 .status(user.getStatus().name())
+                .roles(roleNames)
+                .provider(user.getProvider().name())
                 .build();
 
         return AuthResponse.builder()
