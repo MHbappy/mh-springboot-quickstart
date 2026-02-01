@@ -19,6 +19,7 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    validate-on-migrate: false  # Skip checksum validation in dev (using H2 in-memory)
     locations: classpath:db/migration
   
   mail:

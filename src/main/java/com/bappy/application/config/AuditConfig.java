@@ -3,6 +3,7 @@ package com.bappy.application.config;
 import com.bappy.application.security.UserPrincipal;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.security.core.Authentication;
@@ -18,6 +19,7 @@ import java.util.Optional;
 public class AuditConfig {
 
     @Bean
+    @Lazy
     public AuditorAware<Long> auditorProvider() {
         return new AuditorAwareImpl();
     }

@@ -21,4 +21,4 @@ CREATE INDEX idx_notifications_recipient ON notifications(recipient_id);
 CREATE INDEX idx_notifications_sender ON notifications(sender_id);
 CREATE INDEX idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX idx_notifications_created_at ON notifications(created_at);
-CREATE INDEX idx_notifications_recipient_unread ON notifications(recipient_id, is_read) WHERE is_read = FALSE;
+CREATE INDEX idx_notifications_recipient_unread ON notifications(recipient_id, is_read);

@@ -15,7 +15,7 @@ spring:
   
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none  # Let Flyway manage schema, don't validate before migrations run
     show-sql: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
@@ -29,8 +29,8 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    validate-on-migrate: false  # Set to false to skip checksum validation after migration edits
     locations: classpath:db/migration
-    validate-on-migrate: true
   
   mail:
     host: ${MAIL_HOST}

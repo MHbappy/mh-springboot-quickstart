@@ -1,5 +1,6 @@
 package com.bappy.application.user.service;
 
+
 import com.bappy.application.exception.EmailAlreadyExistsException;
 import com.bappy.application.exception.ResourceNotFoundException;
 import com.bappy.application.user.dto.CreateUserRequest;
@@ -15,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +36,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     /**
@@ -101,6 +105,8 @@ public class UserService {
         user.setStatus(status);
         User updatedUser = userRepository.save(user);
         
+
+        
         log.info("User status updated successfully: userId={}, oldStatus={}, newStatus={}", 
                 id, oldStatus, status);
         
@@ -123,6 +129,8 @@ public class UserService {
         
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        
+
         
         log.info("Password changed successfully by admin for user: {}", user.getEmail());
     }
@@ -167,6 +175,8 @@ public class UserService {
         
         log.info("User created successfully: {} with temp password (not logged)", savedUser.getEmail());
         
+
+        
         // TODO: Send email with temporary password
         
         return toDTO(savedUser);
@@ -193,6 +203,8 @@ public class UserService {
         user.setStatus(UserStatus.ACTIVE);
         user.setEmailVerified(true);
         User updatedUser = userRepository.save(user);
+        
+
         
         log.info("User verified successfully: {}", user.getEmail());
         
@@ -230,6 +242,8 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         
+
+        
         Set<Role> newRoles = roleNames.stream()
                 .map(roleName -> roleRepository.findByName(roleName)
                         .orElseThrow(() -> new ResourceNotFoundException("Role", "name", roleName)))
@@ -237,6 +251,8 @@ public class UserService {
         
         user.setRoles(newRoles);
         User updatedUser = userRepository.save(user);
+        
+
         
         log.info("User roles updated successfully for: {}", user.getEmail());
         
@@ -259,6 +275,8 @@ public class UserService {
         
         return password.toString();
     }
+
+
 
     /**
      * Convert User entity to UserDTO
