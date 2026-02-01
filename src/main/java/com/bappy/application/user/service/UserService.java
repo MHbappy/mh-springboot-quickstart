@@ -297,8 +297,40 @@ public class UserService {
                 .roles(user.getRoles().stream()
                         .map(Role::getName)
                         .collect(Collectors.toSet()))
+                .avatarUrl(user.getAvatarUrl())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Update user profile
+     *
+     * @param userId  User ID
+     * @param request Update profile request
+     * @return Updated UserDTO
+     */
+    @Transactional
+    public UserDTO updateProfile(Long userId, com.bappy.application.user.dto.UpdateProfileRequest request) {
+        log.info("Updating profile for user ID: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        if (request.getFirstName() != null) {
+            user.setFirstName(request.getFirstName());
+        }
+        if (request.getLastName() != null) {
+            user.setLastName(request.getLastName());
+        }
+        if (request.getAvatarUrl() != null) {
+            user.setAvatarUrl(request.getAvatarUrl());
+        }
+
+        User updatedUser = userRepository.save(user);
+
+        log.info("Profile updated successfully for user: {}", user.getEmail());
+
+        return toDTO(updatedUser);
     }
 }

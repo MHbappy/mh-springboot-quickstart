@@ -33,5 +33,6 @@ public class AuthResponse {
         private String status;
         private java.util.List<String> roles;
         private String provider;
+        private String avatarUrl;
     }
 }

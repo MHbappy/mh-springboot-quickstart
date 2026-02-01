@@ -373,6 +373,7 @@ public class AuthService {
                 .status(user.getStatus().name())
                 .roles(roleNames)
                 .provider(user.getProvider().name())
+                .avatarUrl(user.getAvatarUrl())
                 .build();
 
         return AuthResponse.builder()

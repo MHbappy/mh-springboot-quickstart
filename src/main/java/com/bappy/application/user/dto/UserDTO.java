@@ -31,6 +31,7 @@ public class UserDTO {
     private UserStatus status;
     private AuthProvider provider;
     private Set<String> roles;
+    private String avatarUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -61,6 +61,9 @@ public class User extends BaseEntity {
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     /**
      * Get user's full name
      */
