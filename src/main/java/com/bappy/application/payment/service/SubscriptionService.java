@@ -3,33 +3,38 @@ package com.bappy.application.payment.service;
 import com.bappy.application.payment.dto.CheckoutRequest;
 import com.bappy.application.payment.dto.CheckoutResponse;
 import com.bappy.application.payment.dto.SubscriptionPlanDto;
+import com.bappy.application.payment.dto.UserSubscriptionDto;
 import com.bappy.application.payment.entity.GatewayConfig;
+import com.bappy.application.payment.entity.PaymentTransaction;
 import com.bappy.application.payment.entity.SubscriptionPlan;
 import com.bappy.application.payment.entity.UserSubscription;
 import com.bappy.application.payment.repository.GatewayConfigRepository;
+import com.bappy.application.payment.repository.PaymentTransactionRepository;
 import com.bappy.application.payment.repository.SubscriptionPlanRepository;
 import com.bappy.application.payment.repository.UserSubscriptionRepository;
 import com.bappy.application.user.entity.User;
-import com.bappy.application.user.repository.UserRepository; // Assuming UserRepository exists
+import com.bappy.application.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SubscriptionService {
 
     private final SubscriptionPlanRepository planRepository;
     private final UserSubscriptionRepository subscriptionRepository;
+    private final PaymentTransactionRepository transactionRepository;
     private final GatewayConfigRepository gatewayConfigRepository;
     private final List<PaymentGatewayService> gatewayServices;
-    // Assuming we can get current user or passed in. For now passing ID.
     private final UserRepository userRepository; 
 
     @Transactional(readOnly = true)
@@ -66,9 +71,6 @@ public class SubscriptionService {
         plan.setFeatures(planDetails.getFeatures());
         plan.setActive(planDetails.isActive());
         
-        // Code is usually immutable as it might be used for external references, but can be changed if needed.
-        // plan.setCode(planDetails.getCode()); 
-
         return mapToDto(planRepository.save(plan));
     }
 
@@ -80,7 +82,6 @@ public class SubscriptionService {
         SubscriptionPlan plan = planRepository.findById(request.getPlanId())
                 .orElseThrow(() -> new RuntimeException("Plan not found"));
         
-        // Determine gateway from request, default to STRIPE if null
         GatewayConfig.GatewayType gatewayType = GatewayConfig.GatewayType.STRIPE;
         if (request.getGateway() != null) {
             try {
@@ -97,6 +98,27 @@ public class SubscriptionService {
     
     public Optional<UserSubscription> getCurrentSubscription(Long userId) {
         return subscriptionRepository.findActiveSubscriptionByUserId(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<UserSubscriptionDto> getCurrentSubscriptionDto(Long userId) {
+        return subscriptionRepository.findActiveSubscriptionByUserId(userId)
+                .map(this::mapToUserSubscriptionDto);
+    }
+
+    private UserSubscriptionDto mapToUserSubscriptionDto(UserSubscription sub) {
+        return UserSubscriptionDto.builder()
+                .id(sub.getId())
+                .userId(sub.getUser().getId())
+                .plan(mapToDto(sub.getPlan()))
+                .status(sub.getStatus())
+                .currentPeriodStart(sub.getCurrentPeriodStart())
+                .currentPeriodEnd(sub.getCurrentPeriodEnd())
+                .autoRenew(sub.isAutoRenew())
+                .createdAt(sub.getCreatedAt())
+                .updatedAt(sub.getUpdatedAt())
+                .canceledAt(sub.getCanceledAt())
+                .build();
     }
 
     private PaymentGatewayService getGatewayService(GatewayConfig.GatewayType type) {
@@ -129,5 +151,106 @@ public class SubscriptionService {
                 .filter(GatewayConfig::isEnabled)
                 .map(g -> g.getGatewayName().name())
                 .collect(Collectors.toList());
+    }
+
+    public void handleStripeWebhook(String payload, String sigHeader) {
+        String endpointSecret = gatewayConfigRepository.findByGatewayName(GatewayConfig.GatewayType.STRIPE)
+                .map(GatewayConfig::getWebhookSecret)
+                .orElseThrow(() -> new RuntimeException("Stripe webhook secret not configured"));
+
+        try {
+            com.stripe.model.Event event = com.stripe.net.Webhook.constructEvent(
+                    payload, sigHeader, endpointSecret
+            );
+
+            log.info("Received Stripe Webhook Event: {}", event.getType());
+
+            if ("checkout.session.completed".equals(event.getType())) {
+                com.stripe.model.EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
+                com.stripe.model.StripeObject stripeObject = null;
+                
+                if (dataObjectDeserializer.getObject().isPresent()) {
+                    stripeObject = dataObjectDeserializer.getObject().get();
+                } else {
+                    stripeObject = dataObjectDeserializer.deserializeUnsafe();
+                }
+                
+                com.stripe.model.checkout.Session session = (com.stripe.model.checkout.Session) stripeObject;
+                
+                if (session != null) {
+                    handleCheckoutSessionCompleted(session);
+                } else {
+                    log.error("Failed to deserialize session object from event");
+                }
+            }
+        } catch (Exception e) {
+            log.error("Webhook processing failed", e);
+            throw new RuntimeException("Webhook processing failed: " + e.getMessage(), e);
+        }
+    }
+
+    private void handleCheckoutSessionCompleted(com.stripe.model.checkout.Session session) {
+        String userId = session.getMetadata().get("userId");
+        String planId = session.getMetadata().get("planId");
+        
+        log.info("Processing checkout completion for user: {} and plan: {}", userId, planId);
+
+        if (userId != null && planId != null) {
+            User user = userRepository.findById(Long.parseLong(userId)).orElseThrow();
+            SubscriptionPlan plan = planRepository.findById(Long.parseLong(planId)).orElseThrow();
+            
+            // 0. Cancel any existing active subscription
+            subscriptionRepository.findActiveSubscriptionByUserId(user.getId())
+                    .ifPresent(existingSub -> {
+                        existingSub.setStatus(UserSubscription.SubscriptionStatus.CANCELED);
+                        existingSub.setCanceledAt(LocalDateTime.now());
+                        existingSub.setAutoRenew(false); // Disable auto-renew
+                        subscriptionRepository.save(existingSub);
+                        log.info("Canceled previous subscription id: {} for user: {}", existingSub.getId(), user.getId());
+                    });
+            
+            // 1. Create Subscription
+            UserSubscription subscription = new UserSubscription();
+            subscription.setUser(user);
+            subscription.setPlan(plan);
+            subscription.setStatus(UserSubscription.SubscriptionStatus.ACTIVE);
+            subscription.setCurrentPeriodStart(LocalDateTime.now());
+            
+            if (plan.getInterval() == SubscriptionPlan.BillingCycle.MONTHLY) {
+                 subscription.setCurrentPeriodEnd(LocalDateTime.now().plusMonths(1));
+            } else if (plan.getInterval() == SubscriptionPlan.BillingCycle.YEARLY) {
+                 subscription.setCurrentPeriodEnd(LocalDateTime.now().plusYears(1));
+            }
+            subscription.setAutoRenew(true);
+            
+            subscription.setStripeSubscriptionId(session.getSubscription());
+            subscription.setStripeCustomerId(session.getCustomer());
+            subscription.setGatewayType(GatewayConfig.GatewayType.STRIPE);
+            
+            subscriptionRepository.save(subscription);
+            log.info("Subscription created for user: {}", userId);
+            
+            // 2. Create Payment Transaction
+            PaymentTransaction transaction = new PaymentTransaction();
+            transaction.setUser(user);
+            transaction.setAmount(new BigDecimal(session.getAmountTotal()).divide(new BigDecimal(100)));
+            transaction.setCurrency(session.getCurrency().toUpperCase());
+            transaction.setGateway(GatewayConfig.GatewayType.STRIPE);
+            transaction.setTransactionId(session.getPaymentIntent()); // OR setup_intent, usually payment_intent for one-time or subscription
+            transaction.setStatus(PaymentTransaction.TransactionStatus.SUCCESS);
+            transaction.setType(PaymentTransaction.TransactionType.SUBSCRIPTION_CHARGE);
+            transaction.setDescription("Subscription payment for " + plan.getName());
+            transaction.setCreatedAt(LocalDateTime.now());
+            
+            if (transaction.getTransactionId() == null) {
+                 // Fallback if payment intent is null (e.g. strict setup mode), try invoice or subscription
+                 transaction.setTransactionId(session.getId());
+            }
+
+            transactionRepository.save(transaction);
+            log.info("Payment Transaction saved for user: {}", userId);
+        } else {
+            log.error("Missing metadata in Stripe Session. userId: {}, planId: {}", userId, planId);
+        }
     }
 }

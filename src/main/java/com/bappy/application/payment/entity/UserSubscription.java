@@ -43,6 +43,7 @@ public class UserSubscription {
 
     // Gateway specific subscription IDs
     private String stripeSubscriptionId;
+    private String stripeCustomerId;
     private String paypalSubscriptionId;
 
     private boolean autoRenew;

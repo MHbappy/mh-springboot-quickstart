@@ -46,11 +46,11 @@ public class SubscriptionController {
     }
     
     @GetMapping("/subscription")
-    public ResponseEntity<UserSubscription> getMySubscription(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<com.bappy.application.payment.dto.UserSubscriptionDto> getMySubscription(@AuthenticationPrincipal UserDetails userDetails) {
          User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
          
-         return subscriptionService.getCurrentSubscription(user.getId())
+         return subscriptionService.getCurrentSubscriptionDto(user.getId())
                  .map(ResponseEntity::ok)
                  .orElse(ResponseEntity.noContent().build());
     }
