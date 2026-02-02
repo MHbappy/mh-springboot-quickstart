@@ -96,7 +96,9 @@ public class SecurityConfig {
                                 "/api/v1/auth/**",
                                 "/oauth2/**",
                                 "/error",
-                                "/favicon.ico"
+                                "/favicon.ico",
+                                "/api/v1/payment/webhook/**",
+                                "/api/v1/payment/plans"
                         ).permitAll()
                         
                         // Swagger/OpenAPI endpoints

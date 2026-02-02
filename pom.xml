@@ -221,7 +221,19 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
+    <!-- Payment Gateways -->
+    <dependency>
+        <groupId>com.stripe</groupId>
+        <artifactId>stripe-java</artifactId>
+        <version>24.12.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.paypal.sdk</groupId>
+        <artifactId>checkout-sdk</artifactId>
+        <version>1.0.0</version>
+    </dependency>
     </dependencies>
+
     
     <build>
         <plugins>
