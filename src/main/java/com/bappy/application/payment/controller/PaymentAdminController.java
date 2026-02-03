@@ -90,4 +90,18 @@ public class PaymentAdminController {
     public ResponseEntity<List<com.bappy.application.payment.dto.PaymentTransactionDto>> getRecentTransactions() {
         return ResponseEntity.ok(subscriptionService.getRecentTransactions());
     }
+
+    @GetMapping("/dashboard/subscribers/active")
+    public ResponseEntity<org.springframework.data.domain.Page<com.bappy.application.payment.dto.ActiveSubscriberDto>> getActiveSubscribers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(subscriptionService.getActiveSubscribers(org.springframework.data.domain.PageRequest.of(page, size)));
+    }
+
+    @PostMapping("/subscription/cancel/{userId}")
+    public ResponseEntity<Void> cancelUserSubscription(@PathVariable Long userId) {
+        subscriptionService.cancelSubscription(userId);
+        return ResponseEntity.ok().build();
+    }
 }

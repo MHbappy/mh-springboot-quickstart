@@ -20,4 +20,6 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     List<UserSubscription> findActiveSubscriptionByUserId(Long userId);
     
     long countByStatus(UserSubscription.SubscriptionStatus status);
+
+    org.springframework.data.domain.Page<UserSubscription> findByStatusIn(List<UserSubscription.SubscriptionStatus> statuses, org.springframework.data.domain.Pageable pageable);
 }

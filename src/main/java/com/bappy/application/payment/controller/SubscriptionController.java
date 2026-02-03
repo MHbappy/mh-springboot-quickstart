@@ -61,4 +61,13 @@ public class SubscriptionController {
          
          return ResponseEntity.ok(subscriptionService.getUserTransactions(user.getId()));
     }
+
+    @PostMapping("/subscription/cancel")
+    public ResponseEntity<Void> cancelMySubscription(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        subscriptionService.cancelSubscription(user.getId());
+        return ResponseEntity.ok().build();
+    }
 }

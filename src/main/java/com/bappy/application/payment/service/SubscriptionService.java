@@ -365,4 +365,44 @@ public class SubscriptionService {
                 org.springframework.data.domain.PageRequest.of(0, 5, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"))
         ).getContent().stream().map(this::mapToTransactionDto).collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<com.bappy.application.payment.dto.ActiveSubscriberDto> getActiveSubscribers(org.springframework.data.domain.Pageable pageable) {
+        org.springframework.data.domain.Page<UserSubscription> subscriptions = subscriptionRepository.findByStatusIn(
+                java.util.Arrays.asList(
+                        UserSubscription.SubscriptionStatus.ACTIVE,
+                        UserSubscription.SubscriptionStatus.TRIALING
+                ),
+                pageable
+        );
+
+        return subscriptions.map(sub -> com.bappy.application.payment.dto.ActiveSubscriberDto.builder()
+                .userId(sub.getUser().getId())
+                .email(sub.getUser().getEmail())
+                .firstName(sub.getUser().getFirstName())
+                .lastName(sub.getUser().getLastName())
+                .planName(sub.getPlan() != null ? sub.getPlan().getName() : "Unknown")
+                .status(sub.getStatus().name())
+                .currentPeriodEnd(sub.getCurrentPeriodEnd())
+                .build()
+        );
+    }
+
+    @Transactional
+    public void cancelSubscription(Long userId) {
+        UserSubscription subscription = subscriptionRepository.findActiveSubscriptionByUserId(userId).stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No active subscription found for user: " + userId));
+
+        if (subscription.getGatewayType() == GatewayConfig.GatewayType.STRIPE && subscription.getStripeSubscriptionId() != null) {
+            getGatewayService(GatewayConfig.GatewayType.STRIPE).cancelSubscription(subscription.getStripeSubscriptionId());
+        }
+        
+        subscription.setStatus(UserSubscription.SubscriptionStatus.CANCELED);
+        subscription.setCanceledAt(LocalDateTime.now());
+        subscription.setAutoRenew(false);
+        subscriptionRepository.save(subscription);
+        
+        log.info("Subscription canceled for user: {}", userId);
+    }
 }
