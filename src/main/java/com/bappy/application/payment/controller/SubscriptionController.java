@@ -23,10 +23,34 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
     private final UserRepository userRepository;
 
+    private final com.bappy.application.payment.service.InvoiceService invoiceService;
+
     @GetMapping("/config")
     public ResponseEntity<List<String>> getEnabledGateways() {
         return ResponseEntity.ok(subscriptionService.getEnabledGateways());
     }
+
+    // ... existing methods ...
+
+    @GetMapping("/invoices/{transactionId}")
+    public ResponseEntity<byte[]> downloadInvoice(
+            @PathVariable Long transactionId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        com.bappy.application.payment.entity.PaymentTransaction transaction = 
+                subscriptionService.getUserTransaction(user.getId(), transactionId);
+        
+        byte[] pdfBytes = invoiceService.generateInvoicePdf(transaction);
+        
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoice_" + transactionId + ".pdf")
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, org.springframework.http.MediaType.APPLICATION_PDF_VALUE)
+                .body(pdfBytes);
+    }
+
 
     @GetMapping("/plans")
     public ResponseEntity<List<SubscriptionPlanDto>> getActivePlans() {

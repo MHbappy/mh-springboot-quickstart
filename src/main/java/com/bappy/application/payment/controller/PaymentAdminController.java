@@ -23,10 +23,28 @@ public class PaymentAdminController {
     private final GatewayConfigRepository gatewayConfigRepository;
     private final SubscriptionService subscriptionService;
 
+    private final com.bappy.application.payment.service.InvoiceService invoiceService;
+
     @GetMapping("/gateways")
     public ResponseEntity<List<GatewayConfig>> getAllGateways() {
         return ResponseEntity.ok(gatewayConfigRepository.findAll());
     }
+
+    // ... existing ...
+
+    @GetMapping("/invoices/{transactionId}")
+    public ResponseEntity<byte[]> downloadInvoice(@PathVariable Long transactionId) {
+        com.bappy.application.payment.entity.PaymentTransaction transaction = 
+                subscriptionService.getTransaction(transactionId);
+        
+        byte[] pdfBytes = invoiceService.generateInvoicePdf(transaction);
+        
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoice_" + transactionId + ".pdf")
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, org.springframework.http.MediaType.APPLICATION_PDF_VALUE)
+                .body(pdfBytes);
+    }
+
 
     @PostMapping("/gateways")
     public ResponseEntity<GatewayConfig> updateGateway(@RequestBody GatewayConfigDto dto) {

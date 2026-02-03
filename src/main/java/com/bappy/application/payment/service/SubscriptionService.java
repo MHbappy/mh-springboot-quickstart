@@ -405,4 +405,20 @@ public class SubscriptionService {
         
         log.info("Subscription canceled for user: {}", userId);
     }
+    @Transactional(readOnly = true)
+    public PaymentTransaction getTransaction(Long transactionId) {
+        PaymentTransaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+        org.hibernate.Hibernate.initialize(transaction.getUser());
+        return transaction;
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentTransaction getUserTransaction(Long userId, Long transactionId) {
+        PaymentTransaction transaction = getTransaction(transactionId);
+        if (!transaction.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Transaction does not belong to user");
+        }
+        return transaction;
+    }
 }
