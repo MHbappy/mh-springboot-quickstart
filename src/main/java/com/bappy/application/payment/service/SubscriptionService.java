@@ -97,12 +97,13 @@ public class SubscriptionService {
     }
     
     public Optional<UserSubscription> getCurrentSubscription(Long userId) {
-        return subscriptionRepository.findActiveSubscriptionByUserId(userId);
+        return subscriptionRepository.findActiveSubscriptionByUserId(userId).stream().findFirst();
     }
 
     @Transactional(readOnly = true)
     public Optional<UserSubscriptionDto> getCurrentSubscriptionDto(Long userId) {
-        return subscriptionRepository.findActiveSubscriptionByUserId(userId)
+        return subscriptionRepository.findActiveSubscriptionByUserId(userId).stream()
+                .findFirst()
                 .map(this::mapToUserSubscriptionDto);
     }
 
@@ -201,7 +202,7 @@ public class SubscriptionService {
             
             // 0. Cancel any existing active subscription
             subscriptionRepository.findActiveSubscriptionByUserId(user.getId())
-                    .ifPresent(existingSub -> {
+                    .forEach(existingSub -> {
                         existingSub.setStatus(UserSubscription.SubscriptionStatus.CANCELED);
                         existingSub.setCanceledAt(LocalDateTime.now());
                         existingSub.setAutoRenew(false); // Disable auto-renew
@@ -252,5 +253,60 @@ public class SubscriptionService {
         } else {
             log.error("Missing metadata in Stripe Session. userId: {}, planId: {}", userId, planId);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.bappy.application.payment.dto.PaymentTransactionDto> getUserTransactions(Long userId) {
+        return transactionRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(this::mapToTransactionDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.bappy.application.payment.dto.PaymentTransactionDto> getAllTransactions() {
+        return transactionRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")).stream()
+                .map(this::mapToTransactionDto)
+                .collect(Collectors.toList());
+    }
+
+    private com.bappy.application.payment.dto.PaymentTransactionDto mapToTransactionDto(PaymentTransaction tx) {
+        return com.bappy.application.payment.dto.PaymentTransactionDto.builder()
+                .id(tx.getId())
+                .userId(tx.getUser().getId())
+                .userEmail(tx.getUser().getEmail())
+                .amount(tx.getAmount())
+                .currency(tx.getCurrency())
+                .gateway(tx.getGateway())
+                .transactionId(tx.getTransactionId())
+                .status(tx.getStatus())
+                .type(tx.getType())
+                .description(tx.getDescription())
+                .failureReason(tx.getFailureReason())
+                .createdAt(tx.getCreatedAt())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public com.bappy.application.payment.dto.DashboardStatsDto getDashboardStats() {
+        java.math.BigDecimal totalRevenue = transactionRepository.sumAmountByStatus(PaymentTransaction.TransactionStatus.SUCCESS);
+        if (totalRevenue == null) totalRevenue = java.math.BigDecimal.ZERO;
+
+        java.time.LocalDateTime startOfDay = java.time.LocalDate.now().atStartOfDay();
+        java.time.LocalDateTime endOfDay = java.time.LocalDate.now().atTime(java.time.LocalTime.MAX);
+        
+        java.math.BigDecimal todaysRevenue = transactionRepository.sumAmountByStatusAndDateRange(
+                PaymentTransaction.TransactionStatus.SUCCESS, startOfDay, endOfDay
+        );
+        if (todaysRevenue == null) todaysRevenue = java.math.BigDecimal.ZERO;
+
+        long activeSubscriptions = subscriptionRepository.countByStatus(com.bappy.application.payment.entity.UserSubscription.SubscriptionStatus.ACTIVE);
+        long totalUsers = userRepository.count();
+
+        return com.bappy.application.payment.dto.DashboardStatsDto.builder()
+                .totalRevenue(totalRevenue)
+                .todaysRevenue(todaysRevenue)
+                .activeSubscriptions(activeSubscriptions)
+                .totalUsers(totalUsers)
+                .build();
     }
 }

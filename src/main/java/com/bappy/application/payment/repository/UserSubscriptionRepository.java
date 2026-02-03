@@ -17,5 +17,7 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     Optional<UserSubscription> findByPaypalSubscriptionId(String paypalSubscriptionId);
     
     @Query("SELECT us FROM UserSubscription us WHERE us.user.id = :userId AND us.status IN ('ACTIVE', 'TRIALING', 'PAST_DUE')")
-    Optional<UserSubscription> findActiveSubscriptionByUserId(Long userId);
+    List<UserSubscription> findActiveSubscriptionByUserId(Long userId);
+    
+    long countByStatus(UserSubscription.SubscriptionStatus status);
 }

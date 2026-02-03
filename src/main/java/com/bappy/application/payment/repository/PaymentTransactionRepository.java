@@ -12,4 +12,14 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     List<PaymentTransaction> findByUserIdOrderByCreatedAtDesc(Long userId);
     
     Optional<PaymentTransaction> findByTransactionId(String transactionId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(pt.amount) FROM PaymentTransaction pt WHERE pt.status = :status")
+    java.math.BigDecimal sumAmountByStatus(@org.springframework.data.repository.query.Param("status") PaymentTransaction.TransactionStatus status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(pt.amount) FROM PaymentTransaction pt WHERE pt.status = :status AND pt.createdAt BETWEEN :startDate AND :endDate")
+    java.math.BigDecimal sumAmountByStatusAndDateRange(
+        @org.springframework.data.repository.query.Param("status") PaymentTransaction.TransactionStatus status,
+        @org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
+        @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate
+    );
 }

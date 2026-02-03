@@ -54,4 +54,11 @@ public class SubscriptionController {
                  .map(ResponseEntity::ok)
                  .orElse(ResponseEntity.noContent().build());
     }
+    @GetMapping("/transactions")
+    public ResponseEntity<List<com.bappy.application.payment.dto.PaymentTransactionDto>> getMyTransactions(@AuthenticationPrincipal UserDetails userDetails) {
+         User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+         
+         return ResponseEntity.ok(subscriptionService.getUserTransactions(user.getId()));
+    }
 }

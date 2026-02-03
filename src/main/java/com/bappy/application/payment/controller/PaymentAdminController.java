@@ -61,4 +61,18 @@ public class PaymentAdminController {
     public ResponseEntity<SubscriptionPlanDto> updatePlan(@PathVariable Long id, @RequestBody SubscriptionPlan plan) {
         return ResponseEntity.ok(subscriptionService.updatePlan(id, plan));
     }
+    @GetMapping("/transactions")
+    public ResponseEntity<List<com.bappy.application.payment.dto.PaymentTransactionDto>> getAllTransactions() {
+        return ResponseEntity.ok(subscriptionService.getAllTransactions());
+    }
+
+    @GetMapping("/transactions/user/{userId}")
+    public ResponseEntity<List<com.bappy.application.payment.dto.PaymentTransactionDto>> getUserTransactions(@PathVariable Long userId) {
+        return ResponseEntity.ok(subscriptionService.getUserTransactions(userId));
+    }
+
+    @GetMapping("/dashboard/stats")
+    public ResponseEntity<com.bappy.application.payment.dto.DashboardStatsDto> getDashboardStats() {
+        return ResponseEntity.ok(subscriptionService.getDashboardStats());
+    }
 }
