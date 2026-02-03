@@ -22,4 +22,6 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
         @org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
         @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate
     );
+
+    List<PaymentTransaction> findByStatusAndCreatedAtAfter(PaymentTransaction.TransactionStatus status, java.time.LocalDateTime date);
 }

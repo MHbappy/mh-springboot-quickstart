@@ -75,4 +75,19 @@ public class PaymentAdminController {
     public ResponseEntity<com.bappy.application.payment.dto.DashboardStatsDto> getDashboardStats() {
         return ResponseEntity.ok(subscriptionService.getDashboardStats());
     }
+
+    @GetMapping("/dashboard/chart/revenue/daily")
+    public ResponseEntity<List<com.bappy.application.payment.dto.ChartDataDto>> getDailyRevenue() {
+        return ResponseEntity.ok(subscriptionService.getDailyRevenue());
+    }
+
+    @GetMapping("/dashboard/chart/revenue/monthly")
+    public ResponseEntity<List<com.bappy.application.payment.dto.ChartDataDto>> getMonthlyRevenue() {
+        return ResponseEntity.ok(subscriptionService.getMonthlyRevenue());
+    }
+
+    @GetMapping("/dashboard/transactions/recent")
+    public ResponseEntity<List<com.bappy.application.payment.dto.PaymentTransactionDto>> getRecentTransactions() {
+        return ResponseEntity.ok(subscriptionService.getRecentTransactions());
+    }
 }

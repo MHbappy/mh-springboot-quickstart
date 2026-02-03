@@ -309,4 +309,60 @@ public class SubscriptionService {
                 .totalUsers(totalUsers)
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public List<com.bappy.application.payment.dto.ChartDataDto> getDailyRevenue() {
+        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+        List<PaymentTransaction> transactions = transactionRepository.findByStatusAndCreatedAtAfter(
+                PaymentTransaction.TransactionStatus.SUCCESS, thirtyDaysAgo
+        );
+
+        java.util.Map<String, BigDecimal> revenueMap = transactions.stream()
+                .collect(Collectors.groupingBy(
+                        tx -> tx.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd")),
+                        Collectors.reducing(BigDecimal.ZERO, PaymentTransaction::getAmount, BigDecimal::add)
+                ));
+
+        // Ensure all last 30 days are present
+        List<com.bappy.application.payment.dto.ChartDataDto> chartData = new java.util.ArrayList<>();
+        for (int i = 29; i >= 0; i--) {
+            String dateLabel = LocalDateTime.now().minusDays(i).format(java.time.format.DateTimeFormatter.ofPattern("MMM dd"));
+            chartData.add(new com.bappy.application.payment.dto.ChartDataDto(
+                    dateLabel,
+                    revenueMap.getOrDefault(dateLabel, BigDecimal.ZERO)
+            ));
+        }
+        return chartData;
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.bappy.application.payment.dto.ChartDataDto> getMonthlyRevenue() {
+        LocalDateTime twelveMonthsAgo = LocalDateTime.now().minusMonths(11).withDayOfMonth(1);
+        List<PaymentTransaction> transactions = transactionRepository.findByStatusAndCreatedAtAfter(
+                PaymentTransaction.TransactionStatus.SUCCESS, twelveMonthsAgo
+        );
+
+        java.util.Map<String, BigDecimal> revenueMap = transactions.stream()
+                .collect(Collectors.groupingBy(
+                        tx -> tx.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("MMM")),
+                        Collectors.reducing(BigDecimal.ZERO, PaymentTransaction::getAmount, BigDecimal::add)
+                ));
+
+        List<com.bappy.application.payment.dto.ChartDataDto> chartData = new java.util.ArrayList<>();
+        for (int i = 11; i >= 0; i--) {
+            String monthLabel = LocalDateTime.now().minusMonths(i).format(java.time.format.DateTimeFormatter.ofPattern("MMM"));
+            chartData.add(new com.bappy.application.payment.dto.ChartDataDto(
+                    monthLabel,
+                    revenueMap.getOrDefault(monthLabel, BigDecimal.ZERO)
+            ));
+        }
+        return chartData;
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.bappy.application.payment.dto.PaymentTransactionDto> getRecentTransactions() {
+        return transactionRepository.findAll(
+                org.springframework.data.domain.PageRequest.of(0, 5, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"))
+        ).getContent().stream().map(this::mapToTransactionDto).collect(Collectors.toList());
+    }
 }
